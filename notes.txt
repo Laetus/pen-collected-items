@@ -1,0 +1,10 @@
+143714 elements
+601.8909s   db writes with visitors by days zone
+164.43108s  db writes
+2.026344s   counter + file read + console output
+0.4966s     counter + file read
+0.0295s     counter 
+
+40000 elements
+169.04795 db writes with visitors by days zone -> lineare scaling (good enough for now)
+
