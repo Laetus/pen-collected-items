@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Methods for preprocessing """
+""" Methods for preprocessing -> should move into Database class """
 # -*- coding: utf-8 -*-
 
 import csv
@@ -55,7 +55,7 @@ def process_object(row, collection, zones):
     zones.find_one_and_update({'id': row['zone']}, update)
 
 
-@DeprecationWarning
+# @DeprecationWarning
 def get_zone(zones, row):
     query = {
         'x1': {'$lte': row['x']},
@@ -79,18 +79,16 @@ def relations(path, database):
     start = time.time()
     for row in reader:
         count += 1
-        process_relation(row, relations, database)
+        process_relation(row, relations, visitors_by_day_zone, database)
         if count % int(1e3) is 0:
             print(count)
-        if count > 4e4:
-            break
 
     end = time.time()
     print(end - start)
     print(count)
 
 
-def process_relation(row, collection, database):
+def process_relation(row, collection, vdz, database):
     for item in row:
         if 'bundle_id' not in item:
             row[item] = int(row[item])
@@ -105,9 +103,12 @@ def process_relation(row, collection, database):
         '$push': {'visitors': row['bundle_id']}
     }
     collection.insert_one(row)
-    database['visitors_by_day_zone'].find_one_and_update(query, update)
+    res = vdz.find_one_and_update(query, update)
+    if res is None:
+        query['visitors'] = [row['bundle_id']]
+        vdz.insert(query)
 
 
-@DeprecationWarning
+# @DeprecationWarning
 def get_object_id(object_id, database):
     return database['objects'].find_one({'refers_to_object_id': object_id}, projection=['_id', 'id', 'zone'])

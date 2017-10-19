@@ -24,4 +24,6 @@ database = client.get_default_database()
 # Preprocessing.objects(material_path + 'location-' + data_length + '.csv', database)
 
 # process items
-#Preprocessing.relations(material_path + 'pen-collected-items-' + data_length + '.csv', database)
+''' Preprocessing.relations(
+    material_path + 'pen-collected-items-' + data_length + '.csv', database)
+ '''

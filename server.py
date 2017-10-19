@@ -8,6 +8,7 @@ from flask import request
 from flask import jsonify
 from flask import abort
 import classes.Database as Database
+import classes.Util as Util
 
 baseUrl = str(os.getenv('BASE_URL', '')) + '/'
 
@@ -22,21 +23,59 @@ def hello():
 
 
 @app.route(baseUrl + 'field')
-def req():
+def field():
     try:
         location = {
             'x': int(request.args.get('x')),
             'y': int(request.args.get('y'))
         }
 
-        res = db.get_zone_of_location(
-            location, projection={'_id': True, 'id': True, 'objects': True})
-        result = {
-            'field_no': res['id']
+        return jsonify(db.handle_single_field(location, request.args))
+
+    except ValueError:
+        abort(400)
+    except Exception as e:
+        print(e)
+        abort(500)
+
+
+@app.route(baseUrl + 'area')
+def area():
+    try:
+        print('sdf')
+        upper_left = {
+            'x': int(request.args.get('upper_left_x')),
+            'y': int(request.args.get('upper_left_y'))
         }
 
-        if 'objects' in res:
-            result['object_count'] = len(res['objects'])
+        bottom_right = {
+            'x': int(request.args.get('bottom_right_x')),
+            'y': int(request.args.get('bottom_right_y'))
+        }
+
+        upper_left_zone = db.get_zone_of_location(
+            upper_left, projection={'_id': True, 'id': True})['id']
+        bottom_right_zone = db.get_zone_of_location(
+            bottom_right, projection={'_id': True, 'id': True})['id']
+
+        print('upper_left_id: ' + str(upper_left_zone))
+        print('bottom_right_id: ' + str(bottom_right_zone))
+
+        res = []
+        visitor_sum = 0
+        object_sum = 0
+        for i in range(bottom_right_zone, upper_left_zone):
+            tmp = db.handle_single_field(i, request.args)
+            if tmp is not None:
+                res.append(tmp)
+                object_sum += tmp['object_count']
+                visitor_sum += tmp['visitor_count']
+
+        result = {
+            'object_count': object_sum,
+            'visitor_sum': visitor_sum,
+            'fields': res
+        }
 
         return jsonify(result)
 
