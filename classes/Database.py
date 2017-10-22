@@ -51,7 +51,7 @@ class Database:
         result = self.__zones.find_one(query, projection=projection)
         return result
 
-    def get_visitors_by_day_and_zone(self, zone_id, day, projection={'_id': True, 'id': True, 'visitors': True}):
+    def get_visitors_by_day_and_zone(self, zone_id, day, projection={'_id': True, 'id': True, 'visitors': True, 'unique_visitors': True, 'visitor_count': True}):
         # check validity
         if not True:
             raise ValueError
@@ -63,6 +63,17 @@ class Database:
 
         result = self.__visitors_by_day_zone.find_one(
             query, projection=projection)
+
+        if 'visitor_count' not in result:
+            unique_visitors = list(set(result['visitors']))
+            update = {
+                'unique_visitors': unique_visitors,
+                'visitor_count': len(unique_visitors)
+            }
+            self.__visitors_by_day_zone.find_one_and_update(
+                query, {'$set': update}, projection={'_id': True})
+            result.update(update)
+
         return result
 
     def get_object_id(self, object_id):
@@ -82,7 +93,7 @@ class Database:
                 zone_id, Util.date2str(act_date))
 
             if tmp is not None:
-                visitor_count = len(tmp['visitors'])
+                visitor_count = tmp['visitor_count']
                 visitor_sum += visitor_count
                 res_list.append({
                     'visitor_count': visitor_count,
@@ -127,8 +138,8 @@ class Database:
             tmp = self.get_visitors_by_day_and_zone(
                 zone['id'], req_args.get('date'))
             if 'visitors' in tmp:
-                result['visitor_count'] = len(tmp['visitors'])
-                result['visitors'] = tmp['visitors']
+                result['visitor_count'] = tmp['visitors_count']
+                result['visitors'] = tmp['unique_visitors']
 
         if 'from' in req_args:
             from_date = Util.str2date(req_args.get('from'))
