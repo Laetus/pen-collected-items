@@ -154,7 +154,7 @@ class Database:
                 result['date'] = req_args.get('date')
                 tmp = self.get_visitors_by_day_and_zone(
                     zone['id'], req_args.get('date'))
-                if 'visitors' in tmp:
+                if tmp is not None and 'visitors' in tmp:
                     result['visitor_count'] = tmp['visitor_count']
                     result['visitors'] = tmp['unique_visitors']
 

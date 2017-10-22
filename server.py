@@ -70,8 +70,8 @@ def area():
             tmp = db.handle_single_field(i, request.args)
             if tmp is not None:
                 res.append(tmp)
-                object_sum += tmp['object_count']
-                visitor_sum += tmp['visitor_count']
+                object_sum += tmp.get('object_count', 0)
+                visitor_sum += tmp.get('visitor_count', 0)
 
         result = {
             'object_count': object_sum,
