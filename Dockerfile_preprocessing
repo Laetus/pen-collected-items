@@ -1,0 +1,19 @@
+FROM python:3
+
+MAINTAINER "philipp-froehlich@hotmail.com"
+
+WORKDIR /root
+
+EXPOSE 27170
+
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+
+RUN mkdir raw
+
+COPY classes classes
+
+COPY preprocessing.py .
+
+CMD ["python", "-u", "preprocessing.py"]

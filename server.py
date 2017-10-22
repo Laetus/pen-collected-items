@@ -4,6 +4,7 @@
 
 import os
 from flask import Flask
+from flask_cors import CORS
 from flask import request
 from flask import jsonify
 from flask import abort
@@ -13,6 +14,7 @@ import classes.Util as Util
 baseUrl = str(os.getenv('BASE_URL', '')) + '/'
 
 app = Flask(__name__)
+CORS(app)
 
 db = Database.Database(os.environ['DB_URI'])
 
@@ -42,7 +44,6 @@ def field():
 @app.route(baseUrl + 'area')
 def area():
     try:
-        print('sdf')
         upper_left = {
             'x': int(request.args.get('upper_left_x')),
             'y': int(request.args.get('upper_left_y'))
@@ -64,7 +65,8 @@ def area():
         res = []
         visitor_sum = 0
         object_sum = 0
-        for i in range(bottom_right_zone, upper_left_zone):
+        for i in Util.getZoneRange(bottom_right_zone, upper_left_zone):
+            print(i)
             tmp = db.handle_single_field(i, request.args)
             if tmp is not None:
                 res.append(tmp)

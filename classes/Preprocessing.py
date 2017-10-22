@@ -4,12 +4,15 @@
 
 import csv
 import time
+import os
 from datetime import datetime
 
 
 def zones(path, database):
     zones = database['zones']
     zones.remove({})
+    cache = database['cache']
+    cache.remove({})
 
     reader = csv.DictReader(open(path, 'r'), quotechar='"')
     count = 0
@@ -18,6 +21,7 @@ def zones(path, database):
         process_zone(row, zones)
 
     assert count is 200
+    print('zones processed')
 
 
 def process_zone(row, collection):
@@ -37,7 +41,7 @@ def objects(path, database):
         count += 1
         process_object(row, objects, database['zones'])
 
-    print(count)
+    print(str(count) + ' objects processed')
 
 
 def process_object(row, collection, zones):
@@ -55,7 +59,6 @@ def process_object(row, collection, zones):
     zones.find_one_and_update({'id': row['zone']}, update)
 
 
-# @DeprecationWarning
 def get_zone(zones, row):
     query = {
         'x1': {'$lte': row['x']},
@@ -69,10 +72,13 @@ def get_zone(zones, row):
 
 
 def relations(path, database):
+    print('start processing relations')
     relations = database['relations']
-    relations.remove({})
     visitors_by_day_zone = database['visitors_by_day_zone']
-    visitors_by_day_zone.remove({})
+
+    if os.getenv('PURGE_RELATIONS', True):
+        relations.remove({})
+        visitors_by_day_zone.remove({})
 
     reader = csv.DictReader(open(path, 'r'), quotechar='"')
     count = 0
@@ -84,8 +90,8 @@ def relations(path, database):
             print(count)
 
     end = time.time()
+    print(str(count) + ' relations processed')
     print(end - start)
-    print(count)
 
 
 def process_relation(row, collection, vdz, database):
@@ -109,6 +115,5 @@ def process_relation(row, collection, vdz, database):
         vdz.insert(query)
 
 
-# @DeprecationWarning
 def get_object_id(object_id, database):
     return database['objects'].find_one({'refers_to_object_id': object_id}, projection=['_id', 'id', 'zone'])

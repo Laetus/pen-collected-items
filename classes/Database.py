@@ -76,22 +76,23 @@ class Database:
         max_visitors = -1
         max_date = from_date
         visitor_sum = 0
-        while from_date < to_date:
+        act_date = from_date
+        while act_date < to_date:
             tmp = self.get_visitors_by_day_and_zone(
-                zone_id, Util.date2str(from_date))
+                zone_id, Util.date2str(act_date))
 
             if tmp is not None:
                 visitor_count = len(tmp['visitors'])
                 visitor_sum += visitor_count
                 res_list.append({
                     'visitor_count': visitor_count,
-                    'date': Util.date2str(from_date)
+                    'date': Util.date2str(act_date)
                 })
                 if max_visitors < visitor_count:
                     max_visitors = visitor_count
-                    max_date = from_date
+                    max_date = act_date
 
-            from_date += timedelta(days=1)
+            act_date += timedelta(days=1)
 
         result = {'visitors': res_list,
                   'visitor_count': visitor_sum,
