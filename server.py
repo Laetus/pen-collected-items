@@ -66,7 +66,7 @@ def area():
         visitor_sum = 0
         object_sum = 0
         for i in Util.getZoneRange(bottom_right_zone, upper_left_zone):
-            print(i)
+
             tmp = db.handle_single_field(i, request.args)
             if tmp is not None:
                 res.append(tmp)

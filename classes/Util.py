@@ -36,3 +36,15 @@ def str2date(datestring):
 
 def date2str(datum):
     return datum.strftime('%Y-%m-%d')
+
+
+def params2query(zone_id, req_args):
+    reqarg = {}
+    for key in req_args.keys():
+        if key not in set(['upper_left_x', 'upper_left_y', 'bottom_right_x', 'bottom_right_y', 'x', 'y']):
+            reqarg[key] = req_args[key]
+
+    return {
+        'zone_id':  zone_id,
+        'request-args': reqarg
+    }

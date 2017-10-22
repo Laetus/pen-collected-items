@@ -21,6 +21,7 @@ class Database:
         self.__zones = self.__db['zones']
         self.__objects = self.__db['objects']
         self.__relations = self.__db['relations']
+        self.__cache = self.__db['cache']
         self.__visitors_by_day_zone = self.__db['visitors_by_day_zone']
 
     def get_zone_of_location(self, location, projection={'_id': True, 'id': True}):
@@ -64,7 +65,7 @@ class Database:
         result = self.__visitors_by_day_zone.find_one(
             query, projection=projection)
 
-        if 'visitor_count' not in result:
+        if (result is not None) and ('visitor_count' not in result):
             unique_visitors = list(set(result['visitors']))
             update = {
                 'unique_visitors': unique_visitors,
@@ -119,6 +120,7 @@ class Database:
         return result
 
     def handle_single_field(self, location, req_args):
+
         if isinstance(location, dict):
             zone = self.get_zone_of_location(
                 location, projection={'_id': True, 'id': True, 'objects': True})
@@ -126,29 +128,52 @@ class Database:
             zone = self.get_zone(location, projection={
                                  '_id': True, 'id': True, 'objects': True})
 
-        result = {
-            'zone_id': zone['id']
-        }
+        # check cache
+        cached_result = self.__cache.find_one_and_update({
+            'query': Util.params2query(
+                zone['id'], req_args)},
+            {
+            '$currentDate': {
+                'lastNeeded': True
+            },
+            '$inc': {
+                'used': 1
+            }
+        })
 
-        if 'objects' in zone:
-            result['object_count'] = len(zone['objects'])
+        if cached_result is None:
 
-        if 'date' in req_args:
-            result['date'] = req_args.get('date')
-            tmp = self.get_visitors_by_day_and_zone(
-                zone['id'], req_args.get('date'))
-            if 'visitors' in tmp:
-                result['visitor_count'] = tmp['visitors_count']
-                result['visitors'] = tmp['unique_visitors']
+            result = {
+                'zone_id': zone['id']
+            }
 
-        if 'from' in req_args:
-            from_date = Util.str2date(req_args.get('from'))
-            if 'to' in req_args:
-                to_date = Util.str2date(req_args.get('to'))
-            else:
-                to_date = date.today()
+            if 'objects' in zone:
+                result['object_count'] = len(zone['objects'])
 
-            result.update(self.get_visitors_by_time_range_and_zone(
-                zone['id'], from_date, to_date))
+            if 'date' in req_args:
+                result['date'] = req_args.get('date')
+                tmp = self.get_visitors_by_day_and_zone(
+                    zone['id'], req_args.get('date'))
+                if 'visitors' in tmp:
+                    result['visitor_count'] = tmp['visitor_count']
+                    result['visitors'] = tmp['unique_visitors']
+
+            if 'from' in req_args:
+                from_date = Util.str2date(req_args.get('from'))
+                if 'to' in req_args:
+                    to_date = Util.str2date(req_args.get('to'))
+                else:
+                    to_date = date.today()
+
+                result.update(self.get_visitors_by_time_range_and_zone(
+                    zone['id'], from_date, to_date))
+
+            # write to cache
+            self.__cache.insert({
+                'query': Util.params2query(zone['id'], req_args),
+                'result': result
+            })
+        else:
+            result = cached_result['result']
 
         return result
